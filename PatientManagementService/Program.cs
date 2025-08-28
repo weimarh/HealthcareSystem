@@ -1,6 +1,8 @@
+using MassTransit;
 using MongoDB.Driver;
 using PatientManagementService.Repositories;
 using PatientManagementService.Settings;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +26,18 @@ builder.Services.AddSingleton(serviceProvider =>
 });
 
 builder.Services.AddSingleton<IPatientRepository, PatientsRepository>();
+
+builder.Services.AddMassTransit(x =>
+{
+    x.AddConsumers(Assembly.GetEntryAssembly());
+
+    x.UsingRabbitMq((context, configurator) =>
+    {
+        var rabbitMqSettings = builder.Configuration.GetSection(nameof(RabbitMQSettings)).Get<RabbitMQSettings>();
+        configurator.Host(rabbitMqSettings?.Host);
+        configurator.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter(serviceSettings.ServiceName, false));
+    });
+});
 
 // Add services to the container.
 

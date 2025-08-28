@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using MassTransit;
+using Microsoft.AspNetCore.Mvc;
+using PatientContracts;
 using PatientManagementService.Entities;
 using PatientManagementService.Enums;
 using PatientManagementService.Repositories;
@@ -10,10 +12,12 @@ namespace PatientManagementService.Controllers
     public class PatientsController : ControllerBase
     {
         private readonly IPatientRepository _repository;
+        private readonly IPublishEndpoint _publishEndpoint;
 
-        public PatientsController(IPatientRepository repository)
+        public PatientsController(IPatientRepository repository, IPublishEndpoint publishEndpoint)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            _publishEndpoint = publishEndpoint ?? throw new ArgumentNullException(nameof(publishEndpoint));
         }
 
         [HttpGet]
@@ -50,6 +54,12 @@ namespace PatientManagementService.Controllers
             };
 
             await _repository.CreateAsync(patient);
+
+            await _publishEndpoint.Publish(new PatientCreated(patient.Id,
+                patient.Complement,
+                patient.FirstName,
+                patient.LastName,
+                patient.Gender.ToString()));
           
             return CreatedAtAction(nameof(GetPatientById), new { id = patient.Id }, patient);
         }
@@ -72,6 +82,13 @@ namespace PatientManagementService.Controllers
 
             await _repository.UpdateAsync(existingPatient);
 
+            await _publishEndpoint.Publish(new PatientUpdated(
+                existingPatient.Id,
+                existingPatient.Complement,
+                existingPatient.FirstName,
+                existingPatient.LastName,
+                existingPatient.Gender.ToString()));
+
             return NoContent();
         }
 
@@ -84,6 +101,8 @@ namespace PatientManagementService.Controllers
                 return NotFound();
 
             await _repository.RemoveAsync(id);
+
+            await _publishEndpoint.Publish(new PatientDeleted(existingPatient.Id));
 
             return NoContent();
         }
