@@ -22,11 +22,19 @@ namespace ElectronicHealthRecordsService.Controllers
         {
             var medicalHistories = await _repository.GetAllAsync();
             var patients = await _petientRepository.GetAllPatientsAsync();
+            Patient? patient;
 
             var medicalHistoriesDtos = medicalHistories.Select(medicalHistory =>
             {
-                var patient = patients.Single(patient => patient.Id == medicalHistory.PatientId);
-                return medicalHistory.AsDto(patient.Complement, patient.FirstName, patient.LastName, patient.Gender);
+                if (patients == null)
+                    return Ok(medicalHistory.AsDto("", "", "", "Male"));
+
+                patient = patients.SingleOrDefault(patient => patient.Id == medicalHistory.PatientId);
+
+                if (patient == null)
+                    return Ok(medicalHistory.AsDto("", "", "", "Male"));
+
+                return Ok(medicalHistory.AsDto(patient.Complement, patient.FirstName, patient.LastName, patient.Gender));
             });
 
             return Ok(medicalHistoriesDtos);
@@ -42,6 +50,9 @@ namespace ElectronicHealthRecordsService.Controllers
                 return NotFound();
 
             var patient = await _petientRepository.GetPatientByIdAsync(medicalHistory.PatientId);
+
+            if (patient == null)
+                return Ok(medicalHistory.AsDto("", "", "", "Male"));
 
             return Ok(medicalHistory.AsDto(patient.Complement, patient.FirstName, patient.LastName, patient.Gender));
         }

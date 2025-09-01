@@ -26,14 +26,14 @@ namespace ElectronicHealthRecordsService.Controllers
             var medicalAppointmentsDtos = medicalAppointments.Select(medicalAppointment =>
             {
                 if (patients == null)
-                    return medicalAppointment.AsDto("", "", "", "Male");
+                    return Ok(medicalAppointment.AsDto("", "", "", "Male"));
 
                 patient = patients.SingleOrDefault(patient => patient.Id == medicalAppointment.PatientId);
 
                 if (patient == null)
-                    return medicalAppointment.AsDto("", "", "", "Male");
+                    return Ok(medicalAppointment.AsDto("", "", "", "Male"));
 
-                return medicalAppointment.AsDto(patient.Complement, patient.FirstName, patient.LastName, patient.Gender);
+                return Ok(medicalAppointment.AsDto(patient.Complement, patient.FirstName, patient.LastName, patient.Gender));
             });
 
             return Ok(medicalAppointmentsDtos);
@@ -48,6 +48,9 @@ namespace ElectronicHealthRecordsService.Controllers
                 return NotFound();
 
             var patient = await _petientRepository.GetPatientByIdAsync(medicalAppointment.PatientId);
+
+            if (patient == null)
+                return Ok(medicalAppointment.AsDto("", "", "", "Male"));
 
             return Ok(medicalAppointment.AsDto(patient.Complement, patient.FirstName, patient.LastName, patient.Gender));
         }
