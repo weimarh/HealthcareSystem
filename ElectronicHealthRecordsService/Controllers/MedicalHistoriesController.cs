@@ -9,25 +9,41 @@ namespace ElectronicHealthRecordsService.Controllers
     public class MedicalHistoriesController : ControllerBase
     {
         private readonly IRepository<MedicalHistory> _repository;
+        private readonly IPatientRepository _petientRepository;
 
-        public MedicalHistoriesController(IRepository<MedicalHistory> repository)
+        public MedicalHistoriesController(IRepository<MedicalHistory> repository, IPatientRepository petientRepository)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            _petientRepository = petientRepository ?? throw new ArgumentNullException(nameof(petientRepository));
         }
 
         [HttpGet]
-        public async Task<IEnumerable<MedicalHistoryDto>> GetAllMedicalHistories() =>
-            (await _repository.GetAllAsync()).Select(x => x.AsDto()).ToList();
+        public async Task<ActionResult<IEnumerable<MedicalHistoryDto>>> GetAllMedicalHistories()
+        {
+            var medicalHistories = await _repository.GetAllAsync();
+            var patients = await _petientRepository.GetAllPatientsAsync();
+
+            var medicalHistoriesDtos = medicalHistories.Select(medicalHistory =>
+            {
+                var patient = patients.Single(patient => patient.Id == medicalHistory.PatientId);
+                return medicalHistory.AsDto(patient.Complement, patient.FirstName, patient.LastName, patient.Gender);
+            });
+
+            return Ok(medicalHistoriesDtos);
+        }
+            
 
         [HttpGet("{id}")]
         public async Task<ActionResult<MedicalHistoryDto>> GetMedicalHistoryById(Guid id)
         {
             var medicalHistory = await _repository.GetAsync(id);
-
+                       
             if (medicalHistory == null)
                 return NotFound();
 
-            return medicalHistory.AsDto();
+            var patient = await _petientRepository.GetPatientByIdAsync(medicalHistory.PatientId);
+
+            return Ok(medicalHistory.AsDto(patient.Complement, patient.FirstName, patient.LastName, patient.Gender));
         }
 
         [HttpPost]

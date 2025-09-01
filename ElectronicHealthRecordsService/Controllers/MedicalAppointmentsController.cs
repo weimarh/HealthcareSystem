@@ -9,14 +9,35 @@ namespace ElectronicHealthRecordsService.Controllers
     public class MedicalAppointmentsController : ControllerBase
     {
         private readonly IRepository<MedicalAppointment> _repository;
-        public MedicalAppointmentsController(IRepository<MedicalAppointment> repository)
+        private readonly IPatientRepository _petientRepository;
+        public MedicalAppointmentsController(IRepository<MedicalAppointment> repository, IPatientRepository petientRepository)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            _petientRepository = petientRepository ?? throw new ArgumentNullException(nameof(petientRepository));
         }
 
         [HttpGet]
-        public async Task<IEnumerable<MedicalAppointmentDto>> GetAllMedicalAppointments() =>
-            (await _repository.GetAllAsync()).Select(x => x.AsDto()).ToList();
+        public async Task<ActionResult<IEnumerable<MedicalAppointmentDto>>> GetAllMedicalAppointments()
+        {
+            var medicalAppointments = await _repository.GetAllAsync();
+            var patients = await _petientRepository.GetAllPatientsAsync();
+            Patient? patient;
+
+            var medicalAppointmentsDtos = medicalAppointments.Select(medicalAppointment =>
+            {
+                if (patients == null)
+                    return medicalAppointment.AsDto("", "", "", "Male");
+
+                patient = patients.SingleOrDefault(patient => patient.Id == medicalAppointment.PatientId);
+
+                if (patient == null)
+                    return medicalAppointment.AsDto("", "", "", "Male");
+
+                return medicalAppointment.AsDto(patient.Complement, patient.FirstName, patient.LastName, patient.Gender);
+            });
+
+            return Ok(medicalAppointmentsDtos);
+        }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<MedicalAppointmentDto>> GetMedicalAppointmentById(Guid id)
@@ -26,7 +47,9 @@ namespace ElectronicHealthRecordsService.Controllers
             if (medicalAppointment == null)
                 return NotFound();
 
-            return medicalAppointment.AsDto();
+            var patient = await _petientRepository.GetPatientByIdAsync(medicalAppointment.PatientId);
+
+            return Ok(medicalAppointment.AsDto(patient.Complement, patient.FirstName, patient.LastName, patient.Gender));
         }
 
         [HttpPost]

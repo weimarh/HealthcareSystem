@@ -1,10 +1,12 @@
 using ElectronicHealthRecordsService.Entities;
 using ElectronicHealthRecordsService.Repositories;
 using ElectronicHealthRecordsService.Settings;
+using MassTransit;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
 using MongoDB.Driver;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,6 +33,19 @@ builder.Services.AddSingleton(serviceProvider =>
 
 builder.Services.AddSingleton<IRepository<MedicalHistory>, MedicalHistoryRepository>();
 builder.Services.AddSingleton<IRepository<MedicalAppointment>, MedicalAppointmentRepository>();
+builder.Services.AddSingleton<IPatientRepository, PatientRepository>();
+
+builder.Services.AddMassTransit(x =>
+{
+    x.AddConsumers(Assembly.GetEntryAssembly());
+
+    x.UsingRabbitMq((context, configurator) =>
+    {
+        var rabbitMqSettings = builder.Configuration.GetSection(nameof(RabbitMQSettings)).Get<RabbitMQSettings>();
+        configurator.Host(rabbitMqSettings?.Host);
+        configurator.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter(serviceSettings.ServiceName, false));
+    });
+});
 
 // Add services to the container.
 

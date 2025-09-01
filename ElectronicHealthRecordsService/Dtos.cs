@@ -5,6 +5,10 @@ namespace ElectronicHealthRecordsService
     public record MedicalAppointmentDto(
         Guid Id,
         int PatientId,
+        string? Complement,
+        string FirstName,
+        string LastName,
+        string Gender,
         DateTime ConsultationDate,
         string Symptoms,
         string Diagnosis,
@@ -26,6 +30,10 @@ namespace ElectronicHealthRecordsService
     public record MedicalHistoryDto(
         Guid Id,
         int PatientId,
+        string? Complement,
+        string FirstName,
+        string LastName,
+        string Gender,
         string PastIllnesses,
         string Surgeries,
         string Hospitalizations,
@@ -58,4 +66,11 @@ namespace ElectronicHealthRecordsService
         string FamilyMedicalHistory,
         [Required]string Occupation,
         [Required]string Lifestyle);
+
+    public record PatientDto(
+        int PatientId,
+        string? Complement,
+        string FirstName,
+        string LastName,
+        string Gender);
 }
