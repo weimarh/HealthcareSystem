@@ -21,20 +21,34 @@ namespace ElectronicHealthRecordsService.Controllers
         {
             var medicalAppointments = await _repository.GetAllAsync();
             var patients = await _petientRepository.GetAllPatientsAsync();
-            Patient? patient;
 
-            var medicalAppointmentsDtos = medicalAppointments.Select(medicalAppointment =>
+            var patientLookup = patients?.ToDictionary(p => p.Id) ?? new Dictionary<int, Patient>();
+
+            var medicalAppointmentsDtos = medicalAppointments.Select(ma =>
             {
-                if (patients == null)
-                    return Ok(medicalAppointment.AsDto("", "", "", "Male"));
 
-                patient = patients.SingleOrDefault(patient => patient.Id == medicalAppointment.PatientId);
+                patientLookup.TryGetValue(ma.PatientId, out var patient);
 
-                if (patient == null)
-                    return Ok(medicalAppointment.AsDto("", "", "", "Male"));
+                return new MedicalAppointmentDto
+                (
+                    ma.Id,
+                    ma.PatientId,
+                    patient?.Complement ?? "",
+                    patient?.FirstName ?? "",
+                    patient?.LastName ?? "",
+                    patient?.Gender ?? "",
+                    ma.ConsultationDate,
+                    ma.Symptoms,
+                    ma.Diagnosis,
+                    ma.Treatment
+                );
+                //var patient = patients.SingleOrDefault(patient => patient.Id == medicalAppointment.PatientId);
 
-                return Ok(medicalAppointment.AsDto(patient.Complement, patient.FirstName, patient.LastName, patient.Gender));
-            });
+                //if (patient == null)
+                //    return Ok(medicalAppointment.AsDto("", "", "", "Male"));
+
+                //return Ok(medicalAppointment.AsDto(patient.Complement, patient.FirstName, patient.LastName, patient.Gender));
+            }).ToList();
 
             return Ok(medicalAppointmentsDtos);
         }
@@ -50,7 +64,7 @@ namespace ElectronicHealthRecordsService.Controllers
             var patient = await _petientRepository.GetPatientByIdAsync(medicalAppointment.PatientId);
 
             if (patient == null)
-                return Ok(medicalAppointment.AsDto("", "", "", "Male"));
+                return Ok(medicalAppointment.AsDto("", "", "", ""));
 
             return Ok(medicalAppointment.AsDto(patient.Complement, patient.FirstName, patient.LastName, patient.Gender));
         }

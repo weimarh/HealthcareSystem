@@ -10,6 +10,7 @@ namespace LabManagementService.Database
         public DbSet<LabOrder> LabOrders { get; set; }
         public DbSet<LabTest> LabTests { get; set; }
         public DbSet<LabResult> LabResults { get; set; }
+        public DbSet<Patient> Patients { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -85,6 +86,14 @@ namespace LabManagementService.Database
                 .Property(p => p.Value)
                 .HasMaxLength(100)
                 .IsRequired();
+
+
+            modelBuilder.Entity<Patient>()
+                .ToTable("Patients");
+
+            modelBuilder.Entity<Patient>()
+                .Property(p => p.Id)
+                .ValueGeneratedNever();
         }
     }
 }

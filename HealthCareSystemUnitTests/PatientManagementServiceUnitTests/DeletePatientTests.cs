@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using MassTransit;
+using Microsoft.AspNetCore.Mvc;
 using Moq;
 using PatientManagementService.Controllers;
 using PatientManagementService.Entities;
@@ -10,11 +11,13 @@ namespace HealthCareSystemUnitTests.PatientManagementServiceUnitTests
     {
         private readonly Mock<IPatientRepository> _mockRepo;
         private readonly PatientsController _controller;
+        private readonly Mock<IPublishEndpoint> _mockPublishEndpoint;
 
         public DeletePatientTests()
         {
             _mockRepo = new Mock<IPatientRepository>();
-            _controller = new PatientsController(_mockRepo.Object);
+            _mockPublishEndpoint = new Mock<IPublishEndpoint>();
+            _controller = new PatientsController(_mockRepo.Object, _mockPublishEndpoint.Object);
         }
 
         [Fact]

@@ -11,11 +11,13 @@ namespace HealthCareSystemUnitTests.ElectronicHealthRecordsServiceTests.MedicalA
     {
         private readonly Mock<IRepository<MedicalAppointment>> _mockRepository;
         private readonly MedicalAppointmentsController _controller;
+        private readonly Mock<IPatientRepository> _mockPatientRepository;
 
         public PutMedicalAppointmentTests()
         {
             _mockRepository = new Mock<IRepository<MedicalAppointment>>();
-            _controller = new MedicalAppointmentsController(_mockRepository.Object);
+            _mockPatientRepository = new Mock<IPatientRepository>();
+            _controller = new MedicalAppointmentsController(_mockRepository.Object, _mockPatientRepository.Object);
         }
 
         [Fact]

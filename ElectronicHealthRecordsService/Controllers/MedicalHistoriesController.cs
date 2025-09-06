@@ -20,24 +20,59 @@ namespace ElectronicHealthRecordsService.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<MedicalHistoryDto>>> GetAllMedicalHistories()
         {
+            //var medicalHistories = await _repository.GetAllAsync();
+            //var patients = await _petientRepository.GetAllPatientsAsync();
+            //Patient? patient;
+
+            //var medicalHistoriesDtos = medicalHistories.Select(medicalHistory =>
+            //{
+            //    if (patients == null)
+            //        return Ok(medicalHistory.AsDto("", "", "", "Male"));
+
+            //    patient = patients.SingleOrDefault(patient => patient.Id == medicalHistory.PatientId);
+
+            //    if (patient == null)
+            //        return Ok(medicalHistory.AsDto("", "", "", "Male"));
+
+            //    return Ok(medicalHistory.AsDto(patient.Complement, patient.FirstName, patient.LastName, patient.Gender));
+            //});
+
+            //return Ok(medicalHistoriesDtos);
+
             var medicalHistories = await _repository.GetAllAsync();
             var patients = await _petientRepository.GetAllPatientsAsync();
-            Patient? patient;
 
-            var medicalHistoriesDtos = medicalHistories.Select(medicalHistory =>
+
+            var patientLookup = patients?.ToDictionary(p => p.Id) ?? new Dictionary<int, Patient>();
+
+            var medicalHistoryDtos = medicalHistories.Select(mh =>
             {
-                if (patients == null)
-                    return Ok(medicalHistory.AsDto("", "", "", "Male"));
+                // Try to find the matching patient using the dictionary
+                patientLookup.TryGetValue(mh.PatientId, out var patient);
 
-                patient = patients.SingleOrDefault(patient => patient.Id == medicalHistory.PatientId);
 
-                if (patient == null)
-                    return Ok(medicalHistory.AsDto("", "", "", "Male"));
+                return new MedicalHistoryDto
+                (
+                    mh.Id,
+                    mh.PatientId,
+                    patient?.Complement ?? "",
+                    patient?.FirstName ?? "",
+                    patient?.LastName ?? "",
+                    patient?.Gender ?? "",
+                    mh.PastIllnesses,
+                    mh.Surgeries,
+                    mh.Hospitalizations,
+                    mh.Allergies,
+                    mh.CurrentMedications,
+                    mh.SubstanceAbuseHistory,
+                    mh.FamilyMedicalHistory,
+                    mh.Occupation,
+                    mh.Lifestyle
+                );
 
-                return Ok(medicalHistory.AsDto(patient.Complement, patient.FirstName, patient.LastName, patient.Gender));
-            });
+            }).ToList();
 
-            return Ok(medicalHistoriesDtos);
+            return Ok(medicalHistoryDtos);
         }
             
 
@@ -52,7 +87,7 @@ namespace ElectronicHealthRecordsService.Controllers
             var patient = await _petientRepository.GetPatientByIdAsync(medicalHistory.PatientId);
 
             if (patient == null)
-                return Ok(medicalHistory.AsDto("", "", "", "Male"));
+                return Ok(medicalHistory.AsDto("", "", "", ""));
 
             return Ok(medicalHistory.AsDto(patient.Complement, patient.FirstName, patient.LastName, patient.Gender));
         }

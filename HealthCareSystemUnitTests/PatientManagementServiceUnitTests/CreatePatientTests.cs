@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+﻿using MassTransit;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using PatientManagementService;
@@ -6,7 +6,6 @@ using PatientManagementService.Controllers;
 using PatientManagementService.Entities;
 using PatientManagementService.Enums;
 using PatientManagementService.Repositories;
-using System.ComponentModel.DataAnnotations;
 
 namespace HealthCareSystemUnitTests.PatientManagementServiceUnitTests
 {
@@ -14,11 +13,13 @@ namespace HealthCareSystemUnitTests.PatientManagementServiceUnitTests
     {
         private readonly Mock<IPatientRepository> _mockRepo;
         private readonly PatientsController _controller;
+        private readonly Mock<IPublishEndpoint> _mockPublishEndpoint;
 
         public CreatePatientTests()
         {
             _mockRepo = new Mock<IPatientRepository>();
-            _controller = new PatientsController(_mockRepo.Object);
+            _mockPublishEndpoint = new Mock<IPublishEndpoint>();
+            _controller = new PatientsController(_mockRepo.Object, _mockPublishEndpoint.Object);
         }
 
         [Fact]

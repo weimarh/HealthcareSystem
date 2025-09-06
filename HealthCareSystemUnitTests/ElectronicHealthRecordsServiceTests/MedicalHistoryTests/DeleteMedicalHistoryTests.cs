@@ -10,11 +10,13 @@ namespace HealthCareSystemUnitTests.ElectronicHealthRecordsServiceTests.MedicalH
     {
         private readonly Mock<IRepository<MedicalHistory>> _mockRepo;
         private readonly MedicalHistoriesController _controller;
+        private readonly Mock<IPatientRepository> _mockPatientRepository;
 
         public DeleteMedicalHistoryTests()
         {
             _mockRepo = new Mock<IRepository<MedicalHistory>>();
-            _controller = new MedicalHistoriesController(_mockRepo.Object);
+            _mockPatientRepository = new Mock<IPatientRepository>();
+            _controller = new MedicalHistoriesController(_mockRepo.Object, _mockPatientRepository.Object);
         }
 
         [Fact]

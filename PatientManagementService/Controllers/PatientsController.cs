@@ -21,10 +21,10 @@ namespace PatientManagementService.Controllers
         }
 
         [HttpGet]
-        public async Task<IEnumerable<PatientDto>> GetAllPatients()
+        public async Task<ActionResult<IEnumerable<PatientDto>>> GetAllPatients()
         {
             var patients = (await _repository.GetAllAsync()).Select(patient => patient.AsDto());
-            return patients;
+            return Ok(patients.ToList());
         }
 
         [HttpGet("{id}")]
@@ -35,7 +35,7 @@ namespace PatientManagementService.Controllers
             if (patient == null)
                 return NotFound();
 
-            return patient.AsDto();
+            return Ok(patient.AsDto());
         }
 
         [HttpPost]

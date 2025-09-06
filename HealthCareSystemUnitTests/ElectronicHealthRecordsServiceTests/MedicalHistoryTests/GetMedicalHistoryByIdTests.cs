@@ -11,15 +11,63 @@ namespace HealthCareSystemUnitTests.ElectronicHealthRecordsServiceTests.MedicalH
     {
         private readonly Mock<IRepository<MedicalHistory>> _mockRepo;
         private readonly MedicalHistoriesController _controller;
+        private readonly Mock<IPatientRepository> _mockPatientRepository;
 
         public GetMedicalHistoryByIdTests()
         {
             _mockRepo = new Mock<IRepository<MedicalHistory>>();
-            _controller = new MedicalHistoriesController(_mockRepo.Object);
+            _mockPatientRepository = new Mock<IPatientRepository>();
+            _controller = new MedicalHistoriesController(_mockRepo.Object, _mockPatientRepository.Object);
         }
 
         [Fact]
-        public async Task GetMedicalHistoryById_ReturnsMedicalHistoryDto_WhenMedicalHistoryExists()
+        public async Task GetMedicalHistoryById_ReturnsMedicalHistoryDto_WhenMedicalHistoryExistsWithMatchingPatients()
+        {
+            //Arrange
+            var medicalHistoryId = new Guid("9c0de042-8c1b-4b58-9cec-0cd2819e518a");
+            var medicalHistory = new MedicalHistory
+            {
+                Id = medicalHistoryId,
+                PatientId = 5207907,
+                PastIllnesses = "test1",
+                Surgeries = "test",
+                Hospitalizations = "test",
+                Allergies = "test",
+                CurrentMedications = "test",
+                SubstanceAbuseHistory = "test",
+                FamilyMedicalHistory = "test",
+                Occupation = "test",
+                Lifestyle = "test",
+            };
+
+            var patient = new Patient
+            {
+                Id = 5207907,
+                Complement = "1-A",
+                FirstName = "Weimar",
+                LastName = "Barea",
+                Gender = "Male",
+            };
+
+            _mockRepo.Setup(repo => repo.GetAsync(new Guid("9c0de042-8c1b-4b58-9cec-0cd2819e518a"))).ReturnsAsync(medicalHistory);
+            _mockPatientRepository.Setup(repo => repo.GetPatientByIdAsync(patient.Id)).ReturnsAsync(patient);
+
+            //Act
+            var result = await _controller.GetMedicalHistoryById(new Guid("9c0de042-8c1b-4b58-9cec-0cd2819e518a"));
+
+            //Assert
+            var okResult = Assert.IsAssignableFrom<OkObjectResult>(result.Result);
+            var historyDto = Assert.IsType<MedicalHistoryDto>(okResult.Value);
+
+            Assert.Equal("5207907", historyDto.PatientId.ToString());
+            Assert.Equal("1-A", historyDto.Complement);
+            Assert.Equal("Weimar", historyDto.FirstName);
+            Assert.Equal("Barea", historyDto.LastName);
+            Assert.Equal("Male", historyDto.Gender);
+        }
+
+        [Fact]
+        public async Task GetMedicalHistoryById_ReturnsMedicalHistoryDto_WhenMedicalHistoryExistsWithNoMatchingPatients()
         {
             //Arrange
             var medicalHistoryId = new Guid("9c0de042-8c1b-4b58-9cec-0cd2819e518a");
@@ -44,9 +92,14 @@ namespace HealthCareSystemUnitTests.ElectronicHealthRecordsServiceTests.MedicalH
             var result = await _controller.GetMedicalHistoryById(new Guid("9c0de042-8c1b-4b58-9cec-0cd2819e518a"));
 
             //Assert
-            var actionResult = Assert.IsType<ActionResult<MedicalHistoryDto>>(result);
+            var okResult = Assert.IsAssignableFrom<OkObjectResult>(result.Result);
+            var historyDto = Assert.IsType<MedicalHistoryDto>(okResult.Value);
 
-            Assert.Equal(medicalHistory.Id, result.Value?.Id);
+            Assert.Equal("5207907", historyDto.PatientId.ToString());
+            Assert.Equal("", historyDto.Complement);
+            Assert.Equal("", historyDto.FirstName);
+            Assert.Equal("", historyDto.LastName);
+            Assert.Equal("", historyDto.Gender);
         }
 
         [Fact]
@@ -59,8 +112,8 @@ namespace HealthCareSystemUnitTests.ElectronicHealthRecordsServiceTests.MedicalH
             var result = await _controller.GetMedicalHistoryById(Guid.NewGuid());
 
             //Assert
-            var actionResult = Assert.IsType<ActionResult<MedicalHistoryDto>>(result);
-            Assert.IsType<NotFoundResult>(actionResult.Result);
+            var okResult = Assert.IsAssignableFrom<NotFoundResult>(result.Result);
+            Assert.IsType<NotFoundResult>(okResult);
         }
 
         [Fact]
@@ -68,6 +121,7 @@ namespace HealthCareSystemUnitTests.ElectronicHealthRecordsServiceTests.MedicalH
         {
             //Arrange
             Guid id = new Guid("9c0de042-8c1b-4b58-9cec-0cd2819e518a");
+            _mockRepo.Setup(repo => repo.GetAsync(id)).ReturnsAsync((MedicalHistory)null!);
 
             //Act
             await _controller.GetMedicalHistoryById(id);

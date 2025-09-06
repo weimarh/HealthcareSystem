@@ -1,4 +1,6 @@
-﻿using Moq;
+﻿using MassTransit;
+using Microsoft.AspNetCore.Mvc;
+using Moq;
 using PatientManagementService;
 using PatientManagementService.Controllers;
 using PatientManagementService.Entities;
@@ -11,11 +13,13 @@ namespace HealthCareSystemUnitTests.PatientManagementServiceUnitTests
     {
         private readonly Mock<IPatientRepository> _mockPatientRepository;
         private readonly PatientsController _patientsController;
+        private readonly Mock<IPublishEndpoint> _mockPublishEndpoint;
 
         public GetAllPatientsTests()
         {
             _mockPatientRepository = new Mock<IPatientRepository>();
-            _patientsController = new PatientsController(_mockPatientRepository.Object);
+            _mockPublishEndpoint = new Mock<IPublishEndpoint>();
+            _patientsController = new PatientsController(_mockPatientRepository.Object, _mockPublishEndpoint.Object);
         }
 
         [Fact]
@@ -65,11 +69,38 @@ namespace HealthCareSystemUnitTests.PatientManagementServiceUnitTests
             var result = await _patientsController.GetAllPatients();
 
             //Assert
-            Assert.IsAssignableFrom<IEnumerable<PatientDto>>(result);
-            Assert.Equal(3, result.Count());
-            Assert.Contains(result, p => p.FirstName == "Test1");
-            Assert.Contains(result, p => p.FirstName == "Test2");
-            Assert.Contains(result, p => p.FirstName == "Test3");
+            var okResult = Assert.IsAssignableFrom<OkObjectResult>(result.Result);
+            var patientDto = Assert.IsType<List<PatientDto>>(okResult.Value);
+
+            Assert.Equal(3, patientDto.Count());
+
+            Assert.Equal(1 , patientDto[0].Id);
+            Assert.Equal("1A", patientDto[0].Complement);
+            Assert.Equal("Test1", patientDto[0].FirstName);
+            Assert.Equal("Test1", patientDto[0].LastName);
+            Assert.Equal("Male", patientDto[0].Gender.ToString());
+            Assert.Equal("Test1", patientDto[0].HomeAddress);
+            Assert.Equal("Test1", patientDto[0].EmergencyContactName);
+            Assert.Equal("70725926", patientDto[0].EmergencyContactPhone);
+
+            Assert.Equal(2, patientDto[1].Id);
+            Assert.Equal("1A", patientDto[1].Complement);
+            Assert.Equal("Test2", patientDto[1].FirstName);
+            Assert.Equal("Test2", patientDto[1].LastName);
+            Assert.Equal("Male", patientDto[1].Gender.ToString());
+            Assert.Equal("Test2", patientDto[1].HomeAddress);
+            Assert.Equal("Test2", patientDto[1].EmergencyContactName);
+            Assert.Equal("70725926", patientDto[1].EmergencyContactPhone);
+
+            Assert.Equal(3, patientDto[2].Id);
+            Assert.Equal("", patientDto[2].Complement);
+            Assert.Equal("Test3", patientDto[2].FirstName);
+            Assert.Equal("Test3", patientDto[2].LastName);
+            Assert.Equal("Female", patientDto[2].Gender.ToString());
+            Assert.Equal("Test3", patientDto[2].HomeAddress);
+            Assert.Equal("Test3", patientDto[2].EmergencyContactName);
+            Assert.Equal("70725926", patientDto[2].EmergencyContactPhone);
+
         }
 
         [Fact]
@@ -82,7 +113,9 @@ namespace HealthCareSystemUnitTests.PatientManagementServiceUnitTests
             var result = await _patientsController.GetAllPatients();
 
             // Assert
-            Assert.Empty(result);
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            var patientDto = Assert.IsType<List<PatientDto>>(okResult.Value);
+            Assert.Empty(patientDto);
         }
 
         [Fact]
@@ -97,39 +130,6 @@ namespace HealthCareSystemUnitTests.PatientManagementServiceUnitTests
 
             // Assert
             _mockPatientRepository.Verify(repo => repo.GetAllAsync(), Times.Once);
-        }
-
-        [Fact]
-        public async Task GetAllPatients_MapsAllPropertiesCorrectly()
-        {
-            // Arrange
-            var testPatient = new Patient
-            {
-                Id = 1,
-                Complement = "1A",
-                FirstName = "Test1",
-                LastName = "Test1",
-                Gender = Gender.Male,
-                HomeAddress = "Test1",
-                EmergencyContactName = "Test1",
-                EmergencyContactPhone = "70725926"
-            };
-
-            _mockPatientRepository.Setup(repo => repo.GetAllAsync())
-                    .ReturnsAsync(new List<Patient> { testPatient });
-
-            // Act
-            var result = (await _patientsController.GetAllPatients()).First();
-
-            // Assert
-            Assert.Equal(testPatient.Id, result.Id);
-            Assert.Equal(testPatient.Complement, result.Complement);
-            Assert.Equal(testPatient.FirstName, result.FirstName);
-            Assert.Equal(testPatient.LastName, result.LastName);
-            Assert.Equal(testPatient.Gender.ToString(), result.Gender);
-            Assert.Equal(testPatient.HomeAddress, result.HomeAddress);
-            Assert.Equal(testPatient.EmergencyContactName, result.EmergencyContactName);
-            Assert.Equal(testPatient.EmergencyContactPhone, result.EmergencyContactPhone);
         }
     }
 }

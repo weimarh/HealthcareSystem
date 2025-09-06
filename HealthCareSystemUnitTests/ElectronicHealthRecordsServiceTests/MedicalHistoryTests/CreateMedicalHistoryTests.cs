@@ -2,11 +2,8 @@
 using ElectronicHealthRecordsService.Controllers;
 using ElectronicHealthRecordsService.Entities;
 using ElectronicHealthRecordsService.Repositories;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
-using PatientManagementService.Controllers;
-using PatientManagementService.Entities;
 
 namespace HealthCareSystemUnitTests.ElectronicHealthRecordsServiceTests.MedicalHistoryTests
 {
@@ -14,11 +11,13 @@ namespace HealthCareSystemUnitTests.ElectronicHealthRecordsServiceTests.MedicalH
     {
         private readonly Mock<IRepository<MedicalHistory>> _mockRepo;
         private readonly MedicalHistoriesController _controller;
+        private readonly Mock<IPatientRepository> _mockPatientRepository;
 
         public CreateMedicalHistoryTests()
         {
             _mockRepo = new Mock<IRepository<MedicalHistory>>();
-            _controller = new MedicalHistoriesController(_mockRepo.Object);
+            _mockPatientRepository = new Mock<IPatientRepository>();
+            _controller = new MedicalHistoriesController(_mockRepo.Object, _mockPatientRepository.Object);
         }
 
         [Fact]

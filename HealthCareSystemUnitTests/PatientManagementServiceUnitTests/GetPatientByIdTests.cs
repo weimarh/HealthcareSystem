@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using MassTransit;
+using Microsoft.AspNetCore.Mvc;
 using Moq;
 using PatientManagementService;
 using PatientManagementService.Controllers;
@@ -12,11 +13,13 @@ namespace HealthCareSystemUnitTests.PatientManagementServiceUnitTests
     {
         private readonly Mock<IPatientRepository> _mockRepo;
         private readonly PatientsController _controller;
+        private readonly Mock<IPublishEndpoint> _mockPublishEndpoint;
 
         public GetPatientByIdTests()
         {
             _mockRepo = new Mock<IPatientRepository>();
-            _controller = new PatientsController(_mockRepo.Object);
+            _mockPublishEndpoint = new Mock<IPublishEndpoint>();
+            _controller = new PatientsController(_mockRepo.Object, _mockPublishEndpoint.Object);
         }
 
         [Fact]
@@ -41,16 +44,17 @@ namespace HealthCareSystemUnitTests.PatientManagementServiceUnitTests
             var result = await _controller.GetPatientById(1);
 
             //Assert
-            var actionResult = Assert.IsType<ActionResult<PatientDto>>(result);
+            var okResult = Assert.IsAssignableFrom<OkObjectResult>(result.Result);
+            var patient = Assert.IsType<PatientDto>(okResult.Value);
 
-            Assert.Equal(testPatient.Id, result.Value?.Id);
-            Assert.Equal(testPatient.Complement, result.Value?.Complement);
-            Assert.Equal(testPatient.FirstName, result.Value?.FirstName);
-            Assert.Equal(testPatient.LastName, result.Value?.LastName);
-            Assert.Equal(testPatient.Gender.ToString(), result.Value?.Gender);
-            Assert.Equal(testPatient.HomeAddress, result.Value?.HomeAddress);
-            Assert.Equal(testPatient.EmergencyContactName, result.Value?.EmergencyContactName);
-            Assert.Equal(testPatient.EmergencyContactPhone, result.Value?.EmergencyContactPhone);
+            Assert.Equal(testPatient.Id, patient.Id);
+            Assert.Equal(testPatient.Complement, patient.Complement);
+            Assert.Equal(testPatient.FirstName, patient.FirstName);
+            Assert.Equal(testPatient.LastName, patient.LastName);
+            Assert.Equal(testPatient.Gender.ToString(), patient.Gender);
+            Assert.Equal(testPatient.HomeAddress, patient.HomeAddress);
+            Assert.Equal(testPatient.EmergencyContactName, patient.EmergencyContactName);
+            Assert.Equal(testPatient.EmergencyContactPhone, patient.EmergencyContactPhone);
         }
 
         [Fact]
@@ -63,8 +67,8 @@ namespace HealthCareSystemUnitTests.PatientManagementServiceUnitTests
             var result = await _controller.GetPatientById(999);
 
             //Assert
-            var actionResult = Assert.IsType<ActionResult<PatientDto>>(result);
-            Assert.IsType<NotFoundResult>(actionResult.Result);
+            var okResult = Assert.IsAssignableFrom<NotFoundResult>(result.Result);
+            Assert.IsType<NotFoundResult>(okResult);
         }
 
         [Fact]
