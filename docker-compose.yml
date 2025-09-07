@@ -1,0 +1,94 @@
+version: '3.8'
+
+services:
+  electronichealthrecordservice:
+    build:
+      context: ./ElectronicHealthRecordsService
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    depends_on:
+      - sqlserver
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    networks:
+      - helthcarenetwork
+    restart: on-failure
+
+  labmanagementservice:
+    build:
+      context: ./LabManagementService
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8080"
+      - "8083:8081"
+    depends_on:
+      - sqlserver
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    networks:
+      - healthcarenetwork
+    restart: on-failure
+
+  patientmanagementservice:
+    build:
+      context: ./PatientManagementService
+      dockerfile: Dockerfile
+    ports:
+      - "8084:8080"
+      - "8085:8081"
+    depends_on:
+      - sqlserver
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    networks:
+      - healthcarenetwork
+    restart: on-failure
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver_container
+    ports:
+      - "1433:1433"
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "Password12345!"
+    volumes:
+      - sqlserverdata:/var/opt/mssql/data
+    networks:
+    - healthcarenetwork
+
+  mongo:
+    image: mongo
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodbdata:/data/db
+    networks:
+    - healthcarenetwork
+
+  rabbitmq:
+    image: rabbitmq:management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmqdata:/var/lib/rabbitmq
+    hostname: rabbitmq
+    networks:
+    - healthcarenetwork
+
+networks:
+  healthcarenetwork:
+
+volumes:
+  sqlserverdata:
+  mongodbdata:
+  rabbitmqdata:  
+  
+
+
+
